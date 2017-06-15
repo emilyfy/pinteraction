@@ -1,0 +1,10 @@
+<launch>
+	<node 
+	  name="assign" pkg="pinteraction" type="assign.py" respawn="false">
+	</node>
+	<node
+	  name="serial_node" pkg="rosserial_python" type="serial_node.py"  args="/dev/ttyACM0" respawn="false">
+
+	</node>
+
+</launch>
