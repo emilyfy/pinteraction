@@ -10,11 +10,6 @@
 #define inA1       14        // connect to h-bridge input A
 #define inB1       15        // connect to h-bridge input B
 
-#define potPin2    A1
-#define en2        3
-#define inA2       16
-#define inB2       17
-
 double target1, target2;
 int target_1, target_2;
 
