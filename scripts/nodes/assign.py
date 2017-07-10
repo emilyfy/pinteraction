@@ -52,7 +52,8 @@ for i in arr:
             ym[j] = yd[j]
 
 def play():
-    pub = rospy.Publisher('/fourier', Float64MultiArray, queue_size=10)
+    pub1 = rospy.Publisher('/fourier', Float64MultiArray, queue_size=10)
+    pub2 = rospy.Publisher('/hist2', Float64MultiArray, queue_size=10)
     rospy.init_node('ft_pub', anonymous=True)
 
     rospy.loginfo("playing sound file")
@@ -65,12 +66,14 @@ def play():
     ax = plt.gca()
     currtime = time()
 
+    height = [0.0] * 10
     output = Float64MultiArray()
-    output.layout.dim = [MultiArrayDimension]
+    output.layout.dim = [MultiArrayDimension] * 2
     output.layout.dim[0].label = "fourier"
     output.layout.dim[0].size = 10
-    output.layout.dim[0].stride = 1
-    output.layout.data_offset = 0
+    output.layout.dim[0].stride = 100
+
+    output2 = Float64MultiArray()
 
     while (currtime < starttime + duration) and (not rospy.is_shutdown()):
         i = int((currtime-starttime)/T)
@@ -90,6 +93,7 @@ def play():
                 ys = ys + ya[j*(n/20)+k]                    # get y value as summation of amplitudes in band 
             yd.append(20*log10(ys))                         # get dB value
         
+        output2.data = height
         height = [yd[i]/ym[i]*10.0 for i in range(10)]
         rospy.loginfo(height)
         
@@ -99,12 +103,15 @@ def play():
         plt.draw()
 
         output.data = height
-        pub.publish(output)
+        pub1.publish(output)
+        pub2.publish(output2)
         currtime = time()
 
     if not rospy.is_shutdown():
         output.data = [0.0] * 10
-        pub.publish(output)
+        output2.data = [0.0] * 10
+        pub1.publish(output)
+        pub2.publish(output2)
         rospy.loginfo("finished playing song")
 
 if __name__ == '__main__':
