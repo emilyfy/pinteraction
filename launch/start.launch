@@ -1,6 +1,6 @@
 <launch>
 	<node 
-	  name="assign" pkg="pinteraction" type="assign.py" respawn="false">
+	  name="assign" pkg="pinteraction" type="assign.py" respawn="false" required="true">
 	</node>
 	<node
 	  name="serial_node" pkg="rosserial_python" type="serial_node.py"  args="/dev/ttyACM0" respawn="false">

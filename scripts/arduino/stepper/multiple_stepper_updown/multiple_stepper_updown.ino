@@ -40,6 +40,8 @@ Driver Stepper10(motorSteps*microStep, dirPin10, stepPin10);
 
 int pin = 1;
 unsigned int lastChange = millis();
+const int period = 1000;    // milliseconds
+const int pinHeight = 7.5;  // cm to move up down
 
 void setup() {
   Stepper1.setSpeed(250);
@@ -68,13 +70,16 @@ void setup() {
 void loop() {
   //get target
   unsigned int curr = millis();
-  /*int curr2 = curr%8000;
+  
+  /*//sawtooth and sine wave
+  int curr2 = curr%8000;
   curr = curr%4000;
   double target2 = curr*10.0/4000.0;
   double target1 = 10*sin(curr2/8000.0*2*PI);*/
-  unsigned int curr2 = curr%1000;
-  if (curr2<500) target = curr2*7.5/500.0;
-  else  target = curr2*-7.5/500.0 + 15;
+
+  unsigned int curr2 = curr%period;
+  if (curr2<period/2) target = curr2/(period/2.0)*pinHeight;
+  else  target = curr2/(period/2.0)*-pinHeight + pinHeight*2;
   /*target2 = target1;
   target3 = target1;
   target4 = target1;
@@ -85,9 +90,8 @@ void loop() {
   target9 = target1;
   target10 = target1;*/
 
-  pin = (curr/1000);
-  pin = pin%7;
-  pin = pin+1;
+  pin = (curr/period);
+  pin = pin++%7;
 
   target1 = 0;
   target2 = 0;
