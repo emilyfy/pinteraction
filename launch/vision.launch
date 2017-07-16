@@ -1,0 +1,59 @@
+<launch>
+
+    <!--change accordingly to the USB camera  -->
+    <arg name="video_device" default="/dev/video1" />  
+
+    <node
+        name="usb_cam" pkg="usb_cam" type="usb_cam_node" output="screen">
+         <param name="video_device" value="$(arg video_device)" />
+         <!--change accordingly to the USB camera  -->
+         <param name="image_width" value="640" />
+         <param name="image_height" value="480" />
+    </node>
+
+    <node
+        name="vision" pkg="pinteraction" type="vision" respawn="true">
+    </node>
+
+    <!--ARDUINO  --> 
+    <node
+        name="serial_node_0" pkg="rosserial_python" type="serial_node.py" args="/dev/ttyACM0" respawn="true">
+    </node>
+
+    <node
+        name="serial_node_1" pkg="rosserial_python" type="serial_node.py" args="/dev/ttyACM1" respawn="true">
+    </node>
+
+    <node
+        name="serial_node_2" pkg="rosserial_python" type="serial_node.py" args="/dev/ttyACM2" respawn="true">
+    </node>
+
+    <node
+        name="serial_node_3" pkg="rosserial_python" type="serial_node.py" args="/dev/ttyACM3" respawn="true">
+    </node>
+
+    <node
+        name="serial_node_4" pkg="rosserial_python" type="serial_node.py" args="/dev/ttyACM4" respawn="true">
+    </node>
+
+    <node
+        name="serial_node_5" pkg="rosserial_python" type="serial_node.py" args="/dev/ttyACM5" respawn="true">
+    </node>
+
+    <node
+        name="serial_node_6" pkg="rosserial_python" type="serial_node.py" args="/dev/ttyACM6" respawn="true">
+    </node>
+
+    <node
+        name="serial_node_7" pkg="rosserial_python" type="serial_node.py" args="/dev/ttyACM7" respawn="true">
+    </node>
+
+    <node
+        name="serial_node_8" pkg="rosserial_python" type="serial_node.py" args="/dev/ttyACM8" respawn="true">
+    </node>
+
+    <node
+        name="serial_node_9" pkg="rosserial_python" type="serial_node.py" args="/dev/ttyACM9" respawn="true">
+    </node> 
+
+</launch>

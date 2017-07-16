@@ -15,15 +15,18 @@ void setup() {
 
 void loop() {
   int val = analogRead(potPin);
+  Serial.print("val = ");
+  Serial.print(val);
   unsigned int curr = millis();
   curr = curr%period;
   double target;
   if (curr<period/2) target = curr/(period/2.0)*10;
   else  target = curr/(period/2.0)*-10 + 20;
+  Serial.print("\ttarget = ");
   Serial.println(target);
   int targetv = target/10.0*1023;
 
-  if (abs(val-targetv) > 20) {
+  if (abs(val-targetv) > 0) {
     if(val > targetv) {
       digitalWrite(in1, LOW);
       digitalWrite(in2, HIGH);
