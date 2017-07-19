@@ -9,7 +9,7 @@
 # signal processing
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.fftpack import fft
+from scipy.fftpack import fft, ifft
 import Tkinter
 
 # audio playing
@@ -26,6 +26,38 @@ from std_msgs.msg import Float64MultiArray, MultiArrayDimension
 from math import ceil, log10, floor
 from time import time  
 
+'''
+class Limiter:
+    def __init__(self, attack_coeff, release_coeff, delay, dtype=float32):
+        self.delay_index = 0
+        self.envelope = 0
+        self.gain = 1
+        self.delay = delay
+        self.delay_line = zeros(delay, dtype=dtype)
+        self.release_coeff = release_coeff
+        self.attack_coeff = attack_coeff
+
+    def limit(self, signal, threshold):
+        for i in arange(len(signal)):
+            self.delay_line[self.delay_index] = signal[i]
+            self.delay_index = (self.delay_index + 1) % self.delay
+
+            # calculate an envelope of the signal
+            self.envelope *= self.release_coeff
+            self.envelope  = max(abs(signal[i]), self.envelope)
+
+            # have self.gain go towards a desired limiter gain
+            if self.envelope > threshold:
+                target_gain = (1+threshold-self.envelope)
+            else:
+                target_gain = 1.0
+            self.gain = ( self.gain*self.attack_coeff +
+                          target_gain*(1-self.attack_coeff) )
+
+            # limit the delayed signal
+            signal[i] = self.delay_line[self.delay_index] * self.gain
+'''
+
 class Sound(object):
     n = 2048             # no of samples in each block
     
@@ -33,6 +65,9 @@ class Sound(object):
         self.soundfile = path.join(path.dirname(__file__), filepath, filename)
         self.fs, self.y = wavfile.read(self.soundfile)
         
+        self.y.astype(np.int32)
+        
+
         # average two channels if stereo
         if hasattr(self.y[0], "__len__"):
             self.y = [int(np.mean(self.y[i])) for i in range(len(self.y))]
@@ -42,29 +77,33 @@ class Sound(object):
         self.x = np.linspace(0.0, self.N*self.T, self.N)         # create x axis of sound file
         self.duration = self.N/self.fs                           # duration of song
         
-        # to determine ym of each band, run ft on whole music first
+        # to determine ym for each band, run ft on whole music first
         self.ym = [0.0] * 10
-        arr = np.linspace(0,self.N,self.N/self.n)
-        arr = [int(i) for i in arr]
+
+        arr = np.linspace(0,self.N,self.N/self.n)            
+        arr = [int(i) for i in arr]                          
         arr.pop()
+        
+       
         for i in arr:
-            yt = self.y[i:i+self.n]
-            yf = fft(yt)
+            yt = self.y[i:i+self.n]                            
+            yf = fft(yt)                                        
             yf = 2.0/self.n * np.abs(yf[0:self.n/2])
             yd = []
             for j in range(10):
                 ys = 0.0
-                for k in range(self.n/20):
+                for k in range(self.n/20): #sub range 0 to 9
                     ys = ys + yf[j*(self.n/20)+k]
                 yd.append(20*log10(ys))
                 if yd[j] > self.ym[j]:
-                    self.ym[j] = yd[j]
+                    self.ym[j] = yd[j]               
         
-		# ros node setup
-		self.pub = [rospy.Publisher] * 10
-		for i in range(10):
-			self.pub[i] = rospy.Publisher('/fourier/'+str(i+1), Float64MultiArray, queue_size=10)
-		rospy.init_node('master')
+
+        # ros node steup
+        self.pub = [rospy.Publisher] * 10
+        for i in range(10):
+            self.pub[i] = rospy.Publisher('/fourier/'+str(i+1), Float64MultiArray, queue_size=10)
+        rospy.init_node('master')
 
     def start(self):
         sounddevice.play(self.y, self.fs)
@@ -105,7 +144,7 @@ class Sound(object):
             for k in range(int(floor((2.0**(j+1))*(self.n/1980)))-int(floor((2.0**(j))*(self.n/1980)))):
                 ys.append(ya[int(floor((2.0**(j))*(self.n/1980)))+k])
             ysm = np.mean(ys)
-            yd.append(20*log10(((len(ys))**0.333)*ysm*10))
+            yd.append(20*log10((len(ys)**0.333)*ysm))
 
 		
 		# shift history and insert
@@ -125,6 +164,7 @@ class Sound(object):
         self.ax.bar(xd,height)
         plt.draw()
         plt.pause(0.0001)
+        # print(xd)
         
     def stop(self):
         for j in range(10):
@@ -142,8 +182,10 @@ class Sound(object):
                 arr[j] = bandpass(ori, self.xf[j*(self.n/20), (j+1)*(self.n/20)], fs)
             arr[j] = (0.5*10-filter[j])*ori + filter[j]*arr[j] #apply dB accordingly . e.g. ....*ori + ....*arr[j]
 
+
+
 def main():
-    Baa = Sound(filename='Baa-Baa-Black-Sheep.wav', filepath='../../../../../Downloads')
+    Baa = Sound(filename='Avicii - The Nights short unsigned 8bit pcm.wav', filepath='../../../../../Downloads')
     Baa.start()
 
     currtime = time()
