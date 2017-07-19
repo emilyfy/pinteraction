@@ -22,17 +22,19 @@ keeps prompting for input until user chooses to exit
 ## 2) Audio
 ```bash
   roslaunch pinteraction audio.launch
+  roslaunch pinteraction audio.launch soundfile:="filename.wav"
 ```
 runs the node feedback.py which performs fourier transform on the audio file and outputs the result in dB as /height/1
 /height/2 to /height/10 correspond to shifts in time
 reads equalizer feedback from the first row's Arduino Mega and performs inverse fourier transform real time on the audio array
 terminates when the audio finished playing
-change the audio file to be played by changing the arguments to the object declaration in the main() function
+change the audio file to be played by setting argument soundfile in calling roslaunch. The file has to saved inside '~/Pinteraction_audio_files'. By default Baa Baa Black Sheep is played
 
 ## 3) Hand interaction
 ```bash
-  roslaunch pinteraction vision.launch
+  roslaunch pinteraction vision.launch video_device:="/dev/video0
 ```
 runs the node vision.cpp which uses OpenCV to get the position of the hand, which must be wearing a red glove
 subscribes to /distance published by the first row's Mega, which gives the distance between the hand and the pins directly below
 outputs the pin heights, setting them such that they are always 11cm below the hand
+change the camera device to the one to the USB camera by setting the argument video_device in calling roslaunch. Default is /dev/video1

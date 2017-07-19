@@ -1,5 +1,5 @@
 #include <ros.h>
-#include <std_msgs/UInt8.h>
+#include <std_msgs/Bool.h>
 #include <std_msgs/UInt16.h>
 #include <std_msgs/UInt16MultiArray.h>
 #include <math.h>
@@ -19,7 +19,6 @@ const int en[pins]     = { 2,  3,  4,  5,  6,  7,  8,  9, 10, 11};
 const int inA[pins]    = {22, 24, 26, 28, 30, 32, 34, 36, 38, 40};
 const int inB[pins]    = {23, 25, 27, 29, 31, 33, 35, 37, 39, 41};
 double target[pins];
-int targetv[pins];
 
 // equalizer feedback
 unsigned int currTime, commTime = 0;
@@ -41,13 +40,8 @@ void heightCb(const std_msgs::UInt16MultiArray& height) {
   
 }
 
-void modeCb(const std_msgs::UInt8& md) {
-  mode = md.data;
-}
-
 ros::Subscriber<std_msgs::UInt16MultiArray> sub_ht("/height/1", &heightCb); //change accordingly to row no of arduino
-ros::Subscriber<std_msgs::UInt8> sub_md("/mode", &modeCb);
-std_msgs::UInt16MultiArray fdb;
+std_msgs::Bool fdb;
 ros::Publisher pub_fdb("/feedback", &fdb);
 std_msgs::UInt16 dst;
 ros::Publisher pub_dst("/distance", &dst);
@@ -61,11 +55,10 @@ void setup() {
     pinMode(inB[i], OUTPUT);
   }
 
-  for (i=0;i<pins;i++) fdb.data[i] = 512;
+  for (i=0;i<pins;i++) fdb.data[i] = true;
   
   nh.initNode();
   nh.subscribe(sub_ht);
-  nh.subscribe(sub_md);
   nh.advertise(pub_fdb);
   nh.advertise(pub_dst);
 
@@ -84,9 +77,9 @@ void loop() {
   if (mode==2 || mode==3)
   {
     if (currTime > commTime) {
+      nh.getParam("mode", mode);
       if (mode==2) for (i=0;i<pins;i++) checkFdb(i);
       else if (mode==3) sendGlove();
-      
       commTime = commTime + 100;
     }
   }
@@ -119,18 +112,25 @@ void goTarget(int pin) {
 void checkFdb(int pin) {
   for (i=0;i<9;i++) stash[pin][i] = stash[pin][i+1];
   stash[pin][9] = val[pin];
-  
-  if (vartn(stash[pin]) < 5) {    //ok um this is gonna generate a lot of false positives I'm afraid. rethink this
-    fdb.data[pin] = val[pin];
-    pub_fdb.publish( &fdb );
-    off[pin] = 1;
+
+  if (off[pin]==0)
+  {
+    if (vartn(stash[pin]) < 5 && val[pin]<10) {
+      fdb.data[pin] = false;
+      pub_fdb.publish( &fdb );
+      off[pin] = 1;
+    }
   }
 
-  else {
-    fdb.data[pin] = 512;
-    pub_fdb.publish( &fdb );
-    off[pin] = 0;
+  else
+  {
+    if (val[pin]>1013) {
+      fdb.data[pin] = true;
+      pub_fdb.publish( &fdb );
+      off[pin] = 0;
+    }
   }
+  
 }
 
 int vartn(int arr[]) {

@@ -1,11 +1,14 @@
 <launch>
 
+    <arg name="soundfile" default="Baa-Baa-Black-Sheep.wav" />  
+
 	<node
         name="feedback" pkg="pinteraction" type="feedback.py" respawn="false" required="true">
+         <param name="soundfile" value="$(arg soundfile)" />
 	</node>
 
 	<!--ARDUINO  -->
-    <node
+<!--     <node
         name="serial_node_0" pkg="rosserial_python" type="serial_node.py" args="/dev/ttyACM0" respawn="true">
     </node>
 
@@ -44,5 +47,5 @@
     <node
         name="serial_node_9" pkg="rosserial_python" type="serial_node.py" args="/dev/ttyACM9" respawn="true">
     </node>
-
+ -->
 </launch>

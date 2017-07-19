@@ -60,6 +60,7 @@ def callback(msg):
 rospy.Subscriber('/command', Joy, callback, queue_size=20)
 
 def main():
+    rospy.set_param('mode', 1)
     global starttime, duration, row, col
 
     while not rospy.is_shutdown() and not stop:

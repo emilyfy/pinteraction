@@ -34,13 +34,14 @@ vector<std_msgs::UInt16MultiArray> output;
 int img_width, img_height;
 float height;
 int row, col;
-float clearance = 4.0;                                      //distance btw hand and pins, in cm
+float clearance = 11.0;                                      //distance btw hand and pins, in cm
 
 void distCb(const std_msgs::UInt16 dst)
 {
 	float distance = dst.data/1023.0*10.0;
 	float curr = output[row].data[col]/1023.0*10.0;
 	height = curr + distance - clearance;
+	if (height<0) height = 0.0;
 }
 
 void imageCb(const sensor_msgs::ImageConstPtr& msg)
@@ -85,6 +86,7 @@ int main(int argc, char* argv[])
 
 	ros::init(argc, argv, "vision");
 	ros::NodeHandle n;
+	n.setParam("/mode", 3);
 	vector<ros::Publisher> pub;
 	for (int i=0;i<10;i++) {
 		ostringstream convert;
@@ -152,8 +154,24 @@ int main(int argc, char* argv[])
 		for (int i=0;i<objects.size();i++) {
 			row = floor(objects[i].point.x / img_width);
 			col = floor(objects[i].point.y / img_height);
+			
+			if (row>0) {
+				if (col>0) output[row-1].data[col-1] = int(height/10.0*1023);
+				output[row-1].data[col] = int(height/10.0*1023);
+				if (col<9) output[row-1].data[col+1] = int(height/10.0*1023);
+				pub[row-1].publish(output[row-1]);
+			}
 
+			if (row<9) {
+				if (col>0) output[row+1].data[col-1] = int(height/10.0*1023);
+				output[row+1].data[col] = int(height/10.0*1023);
+				if (col<9) output[row+1].data[col+1] = int(height/10.0*1023);
+				pub[row+1].publish(output[row+1]);
+			}
+			
 			output[row].data[col] = int(height/10.0*1023);
+			if (col>0) output[row+1].data[col-1] = int(height/10.0*1023);
+			if (col<9) output[row].data[col+1] = int(height/10.0*1023);
             pub[row].publish(output[row]);
 		}
 		

@@ -9,7 +9,7 @@
 # signal processing
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.fftpack import fft
+from scipy.fftpack import fft, ifft
 
 # audio playing
 from scipy.io import wavfile
@@ -19,7 +19,7 @@ from obspy.signal.filter import bandstop, bandpass
 
 # ros
 import rospy
-from std_msgs.msg import UInt16, UInt16MultiArray, MultiArrayDimension
+from std_msgs.msg import Bool, UInt16, UInt16MultiArray, MultiArrayDimension
 
 # calculations
 from math import ceil, log10
@@ -41,6 +41,8 @@ class Sound(object):
         self.x = np.linspace(0.0, self.N*self.T, self.N)         # create x axis of sound file
         self.duration = self.N/self.fs                           # duration of song
         self.xf = np.linspace(0.0, 1.0/(2.0*self.T), self.n/2)   # x axis for fft
+
+        # make sure data types are of float64, float32, int32, int16, int8 or uint8
         
         # to determine ym of each band, run ft on whole music first
         self.ym = [0.0] * 10
@@ -51,27 +53,32 @@ class Sound(object):
             yt = self.y[i:i+self.n]
             yf = fft(yt)
             yf = 2.0/self.n * np.abs(yf[0:self.n/2])
+
             yd = []
             for j in range(10):
-                ys = 0.0
-                for k in range(self.n/20):
-                    ys = ys + yf[j*(self.n/20)+k]
-                yd.append(20*log10(ys))
+                ys = []
+                for k in range(int(((2.0**(j+1))-(2.0**(j)))*(self.n/1980))):
+                    ys.append(yf[int((2.0**(j))*(self.n/1980))+k])
+                ysm = np.mean(ys)*100
+                if not ysm > 0:
+                    yd.append(0)
+                else:
+                    yd.append(20*log10(ysm))
                 if yd[j] > self.ym[j]:
                     self.ym[j] = yd[j]
-        
-		# ros node setup
-		self.pub = [rospy.Publisher] * 10
-		for i in range(10):
-			self.pub[i] = rospy.Publisher('/height/'+str(i+1), UInt16MultiArray, queue_size=10)
-		rospy.init_node('fourier')
+
+        # ros node setup
+        self.pub = [rospy.Publisher] * 10
+        for i in range(10):
+            self.pub[i] = rospy.Publisher('/height/'+str(i+1), UInt16MultiArray, queue_size=10)
+        rospy.init_node('fourier')
 
     def start(self):
         sounddevice.play(self.y, self.fs)
         self.starttime = time()
         self.currblock = 0
 
-        rospy.Subscriber('/feedback', UInt16MultiArray, self.callback, queue_size=10)
+        rospy.Subscriber('/feedback', Bool, self.callback, queue_size=10)
 
         self.output = [UInt16MultiArray() for j in range(10)]
         for j in range(10):
@@ -99,11 +106,15 @@ class Sound(object):
         xd = []
         yd = []
         for j in range(10):
-            xd.append(np.mean(self.xf[j*(self.n/20):(j+1)*(self.n/20)]))
-            ys = 0.0
-            for k in range(self.n/20):
-                ys = ys + ya[j*(self.n/20)+k]
-            yd.append(20*log10(ys))
+            xd.append(np.mean(self.xf[int((2.0**(j))*(self.n/1980)):int((2.0**(j+1))*(self.n/1980))]))
+            ys = []
+            for k in range(int(((2.0**(j+1))-(2.0**(j)))*(self.n/1980))):
+                ys.append(ya[int((2.0**(j))*(self.n/1980))+k])
+            ysm = np.mean(ys)*100
+            if not ysm > 0:
+                yd.append(0)
+            else:
+                yd.append(20*log10(ysm))
 		
 		# shift history and insert
         height = [int(yd[j]/self.ym[j]*1023.0) for j in range(10)]
@@ -118,7 +129,8 @@ class Sound(object):
         # plot
         self.ax.cla()
         self.ax.set_ylim([0,10])
-        self.ax.bar(xd,height)
+        yh = [yd[j]/self.ym[j]*10.0 for j in range(10)]
+        self.ax.bar(xd,yh)
         plt.draw()
 
     def stop(self):
@@ -127,18 +139,20 @@ class Sound(object):
             self.pub[j].publish(self.output[j])
     
     def callback(self, fdb):
-        filter = [(fdb.data[i]/1023.0-0.5)*10 for j in range(len(fdb.data))]         # -5dB to +5dB
-        ori = y[(self.currblock+1)*self.n:(self.currblock+2)*self.n]
-        arr = [ ori ] * len(filter)
-        for j in range(len(filter)):
-            if filter[j] < 0:
-                arr[j] = bandstop(ori, self.xf[j*(self.n/2/len(filter)), (j+1)*(self.n/2/len(filter))], fs)
-            elif filter[j] > 0:
-                arr[j] = bandpass(ori, self.xf[j*(self.n/20), (j+1)*(self.n/20)], fs)
-            arr[j] = # apply dB accordingly . e.g. ....*ori + ....*arr[j]
+        filter = [fdb.data[j] for j in range(10)]
+        block = self.y[(self.currblock+1)*self.n:(self.currblock+2)*self.n]
+        for j in range(10):
+            if not filter[j]:
+                block = bandstop(block, self.xf[int((2.0**(j))*(self.n/1980))],self.xf[int((2.0**(j+1))*(self.n/1980))], self.fs)
+        self.y[(self.currblock+1)*self.n:(self.currblock+2)*self.n] = block
 
 def main():
-    Baa = Sound(filename='Baa-Baa-Black-Sheep.wav', filepath='../../../../../Downloads')
+    rospy.set_param('mode', 2)
+    try:
+        soundfilename = rospy.get_param('/feedback/soundfile')
+    except IOError:
+        soundfilename = 'Baa-Baa-Black-Sheep.wav'
+    Baa = Sound(filename=soundfilename, filepath='../../../../Pinteraction_audio_files')
     Baa.start()
 
     currtime = time()
