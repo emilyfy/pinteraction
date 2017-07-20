@@ -77,7 +77,7 @@ void loop() {
   if (mode==2 || mode==3)
   {
     if (currTime > commTime) {
-      nh.getParam("mode", mode);
+      nh.getParam("mode", &mode);
       if (mode==2) for (i=0;i<pins;i++) checkFdb(i);
       else if (mode==3) sendGlove();
       commTime = commTime + 100;
