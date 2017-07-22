@@ -1,5 +1,5 @@
 #include <ros.h>
-#include <std_msgs/Bool.h>
+#include <std_msgs/UInt8MultiArray.h>
 #include <std_msgs/UInt16.h>
 #include <std_msgs/UInt16MultiArray.h>
 #include <math.h>
@@ -18,11 +18,11 @@ const int potPin[pins] = {A9, A8, A7, A6, A5, A4, A3, A2, A1, A0};
 const int en[pins]     = { 2,  3,  4,  5,  6,  7,  8,  9, 10, 11};
 const int inA[pins]    = {22, 24, 26, 28, 30, 32, 34, 36, 38, 40};
 const int inB[pins]    = {23, 25, 27, 29, 31, 33, 35, 37, 39, 41};
-double target[pins];
+int target[pins];
+int val[pins];
+unsigned int currTime, updateTime = 0, commTime = 0;
 
 // equalizer feedback
-unsigned int currTime, commTime = 0;
-int val[pins];
 int stash[pins][10];
 int off[pins] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 int vartn(int[]);
@@ -36,12 +36,13 @@ ros::NodeHandle nh;
 
 void heightCb(const std_msgs::UInt16MultiArray& height) {
   
+  updateTime = currTime;
   for (i=0;i<pins;i++) target[i] = height.data[i];
   
 }
 
-ros::Subscriber<std_msgs::UInt16MultiArray> sub_ht("/height/1", &heightCb); //change accordingly to row no of arduino
-std_msgs::Bool fdb;
+ros::Subscriber<std_msgs::UInt16MultiArray> sub_ht("/height/1", &heightCb);
+std_msgs::UInt8MultiArray fdb;
 ros::Publisher pub_fdb("/feedback", &fdb);
 std_msgs::UInt16 dst;
 ros::Publisher pub_dst("/distance", &dst);
@@ -55,7 +56,7 @@ void setup() {
     pinMode(inB[i], OUTPUT);
   }
 
-  for (i=0;i<pins;i++) fdb.data[i] = true;
+  for (i=0;i<pins;i++) fdb.data[i] = 1;
   
   nh.initNode();
   nh.subscribe(sub_ht);
@@ -71,6 +72,10 @@ void loop() {
   for (i=0;i<pins;i++) val[i] = analogRead(potPin[i]);
   
   nh.spinOnce();
+
+  if (currTime - updateTime > 1000) {
+    for (i=0;i<pins;i++) target[i] = 0;
+  }
   
   for (i=0;i<pins;i++) goTarget(i);
 
@@ -116,7 +121,7 @@ void checkFdb(int pin) {
   if (off[pin]==0)
   {
     if (vartn(stash[pin]) < 5 && val[pin]<10) {
-      fdb.data[pin] = false;
+      fdb.data[pin] = 0;
       pub_fdb.publish( &fdb );
       off[pin] = 1;
     }
@@ -125,7 +130,7 @@ void checkFdb(int pin) {
   else
   {
     if (val[pin]>1013) {
-      fdb.data[pin] = true;
+      fdb.data[pin] = 1;
       pub_fdb.publish( &fdb );
       off[pin] = 0;
     }

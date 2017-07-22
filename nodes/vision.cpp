@@ -42,6 +42,7 @@ void distCb(const std_msgs::UInt16 dst)
 	float curr = output[row].data[col]/1023.0*10.0;
 	height = curr + distance - clearance;
 	if (height<0) height = 0.0;
+	else if (height>10) height = 10.0;
 }
 
 void imageCb(const sensor_msgs::ImageConstPtr& msg)

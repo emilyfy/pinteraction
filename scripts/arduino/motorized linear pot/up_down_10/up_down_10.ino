@@ -1,7 +1,7 @@
 #define pins 10     // max of 12 pins can be set
 int i;
 
-const int potPin[pins] = {A0, A1, A2, A3, A4, A5, A6, A7, A8, A9};
+const int potPin[pins] = {A9, A8, A7, A6, A5, A4, A3, A2, A1, A0};
 const int en[pins]     = { 2,  3,  4,  5,  6,  7,  8,  9, 10, 11};
 const int inA[pins]    = {22, 24, 26, 28, 30, 32, 34, 36, 38, 40};
 const int inB[pins]    = {23, 25, 27, 29, 31, 33, 35, 37, 39, 41};

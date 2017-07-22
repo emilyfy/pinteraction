@@ -28,7 +28,8 @@ runs the node feedback.py which performs fourier transform on the audio file and
 /height/2 to /height/10 correspond to shifts in time
 reads equalizer feedback from the first row's Arduino Mega and performs inverse fourier transform real time on the audio array
 terminates when the audio finished playing
-change the audio file to be played by setting argument soundfile in calling roslaunch. The file has to saved inside '~/Pinteraction_audio_files'. By default Baa Baa Black Sheep is played
+node plot.py plots the height output real time on the screen
+change the audio file to be played by setting argument soundfile in calling roslaunch. The file has to saved inside '~/Pinteraction_audio_files'. By default Spirited Away Always With Me is played
 
 ## 3) Hand interaction
 ```bash

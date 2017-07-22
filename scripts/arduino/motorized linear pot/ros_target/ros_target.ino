@@ -18,11 +18,13 @@ const int inA[pins]    = {22, 24, 26, 28, 30, 32, 34, 36, 38, 40};
 const int inB[pins]    = {23, 25, 27, 29, 31, 33, 35, 37, 39, 41};
 int target[pins];
 int val[pins];
+unsigned int currTime, updateTime = 0;
 
 ros::NodeHandle nh;
 
 void messageCb(const std_msgs::UInt16MultiArray& height) {
   
+  updateTime = currTime;
   for (i=0;i<pins;i++) target[i] = height.data[i];
   
 }
@@ -43,9 +45,15 @@ void setup() {
 }
 
 void loop() {
+  currTime = millis();
+  
   for (i=0;i<pins;i++) val[i] = analogRead(potPin[i]);
   
   nh.spinOnce();
+
+  if (currTime - updateTime > 1000) {
+    for (i=0;i<pins;i++) target[i] = 0;
+  }
   
   for (i=0;i<pins;i++) goTarget(i);
 

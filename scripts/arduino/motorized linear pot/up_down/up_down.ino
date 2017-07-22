@@ -1,7 +1,7 @@
-#define potPin    A1      // connect to potentiometer Vref
-#define en        3       // connect to EN on h-bridge. has to be pwm pin
-#define in1       16      // connect to h-bridge in1
-#define in2       17      // connect to h-bridge in2
+#define potPin    A9      // connect to potentiometer Vref
+#define en        2       // connect to EN on h-bridge. has to be pwm pin
+#define in1       22      // connect to h-bridge in1
+#define in2       23      // connect to h-bridge in2
 
 const int period = 250;  // milliseconds
 
