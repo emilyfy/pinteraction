@@ -84,7 +84,10 @@ class Sound(object):
 
         rospy.Subscriber('/feedback', UInt8, self.callback, queue_size=10)
 
-        self.output = [UInt16MultiArray() for j in range(10)]
+        self.output = []
+        for j in range(10):
+            self.output.append(UInt16MultiArray())
+            self.output.layout.data_offset = 0
 
     def fft(self, i):
         self.currblock = i/self.n

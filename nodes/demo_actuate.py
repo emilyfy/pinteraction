@@ -5,21 +5,17 @@
 
 import rospy
 from sensor_msgs.msg import Joy
-from std_msgs.msg import UInt16MultiArray, MultiArrayDimension
-from multiprocessing import Process, Value
+from std_msgs.msg import UInt16MultiArray
 from time import time
 
 pub = [rospy.Publisher] * 10
 for i in range(10):
     pub[i] = rospy.Publisher('/height/'+str(i+1), UInt16MultiArray, queue_size=10)
-rospy.init_node('demo')
+rospy.init_node('demo_actuate')
 
-output = [UInt16MultiArray() for i in range(10)]
+output = []
 for i in range(10):
-    output[i].layout.dim = [MultiArrayDimension]
-    output[i].layout.dim[0].label = str(i+1)
-    output[i].layout.dim[0].size = 10
-    output[i].layout.dim[0].stride = 1
+    output.append(UInt16MultiArray())
     output[i].layout.data_offset = 0
     output[i].data = [0] * 10
 
@@ -60,7 +56,7 @@ def callback(msg):
 rospy.Subscriber('/command', Joy, callback, queue_size=20)
 
 def main():
-    rospy.set_param('mode', 1)
+    rospy.set_param('mode', 0)
     global starttime, duration, row, col
 
     while not rospy.is_shutdown() and not stop:
