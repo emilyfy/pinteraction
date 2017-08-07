@@ -38,7 +38,8 @@ float clearance = 11.0;                                      //distance btw hand
 
 void distCb(const std_msgs::UInt16 dst)
 {
-	float distance = dst.data/1023.0*10.0;
+	//float distance = dst.data/1023.0*10.0;
+	float distance = 15.0;
 	float curr = output[row].data[col]/1023.0*10.0;
 	height = curr + distance - clearance;
 	if (height<0) height = 0.0;
@@ -153,8 +154,8 @@ int main(int argc, char* argv[])
 
 		vector<TrackingObjects> objects = tracker.GetTrackingCoordinates();
 		for (int i=0;i<objects.size();i++) {
-			row = floor(objects[i].point.x / img_width);
-			col = floor(objects[i].point.y / img_height);
+			row = floor(objects[i].point.y / img_height);
+			col = floor(objects[i].point.x / img_width);
 			
 			if (row>0) {
 				if (col>0) output[row-1].data[col-1] = int(height/10.0*1023);

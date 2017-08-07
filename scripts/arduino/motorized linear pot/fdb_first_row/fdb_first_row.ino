@@ -28,7 +28,7 @@ int off[pins] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 int vartn(int[]);
 
 // glove sensor
-const int sensorPin = A10;
+const int sensorPin = A0;
 
 int mode = 0;
 
@@ -56,6 +56,7 @@ void setup() {
     pinMode(inB[i], OUTPUT);
   }
 
+  fdb.data_length = pins;
   for (i=0;i<pins;i++) fdb.data[i] = 1;
   
   nh.initNode();
@@ -78,12 +79,13 @@ void loop() {
   }
   
   for (i=0;i<pins;i++) goTarget(i);
+  
+  nh.getParam("mode", &mode);
 
   if (mode==2 || mode==3)
   {
     if (currTime > commTime) {
-      nh.getParam("mode", &mode);
-      if (mode==2) for (i=0;i<pins;i++) checkFdb(i);
+      if (mode==2) checkFdb();
       else if (mode==3) sendGlove();
       commTime = commTime + 100;
     }
@@ -114,27 +116,30 @@ void goTarget(int pin) {
   }
 }
 
-void checkFdb(int pin) {
-  for (i=0;i<9;i++) stash[pin][i] = stash[pin][i+1];
-  stash[pin][9] = val[pin];
-
-  if (off[pin]==0)
+void checkFdb() {
+  for (int pin=0;pin<pins;pin++)
   {
-    if (vartn(stash[pin]) < 5 && val[pin]<10) {
-      fdb.data[pin] = 0;
-      pub_fdb.publish( &fdb );
-      off[pin] = 1;
+    for (i=0;i<9;i++) stash[pin][i] = stash[pin][i+1];
+    stash[pin][9] = val[pin];
+  
+    if (off[pin]==0)
+    {
+      if (vartn(stash[pin]) < 5 && val[pin]<10) {
+        fdb.data[pin] = 0;
+        off[pin] = 1;
+      }
+    }
+  
+    else
+    {
+      if (val[pin]>1013) {
+        fdb.data[pin] = 1;
+        off[pin] = 0;
+      }
     }
   }
 
-  else
-  {
-    if (val[pin]>1013) {
-      fdb.data[pin] = 1;
-      pub_fdb.publish( &fdb );
-      off[pin] = 0;
-    }
-  }
+  pub_fdb.publish( &fdb );
   
 }
 
@@ -149,6 +154,6 @@ int vartn(int arr[]) {
 
 void sendGlove(void) {
   dst.data = analogRead(sensorPin);
-  pub_fdb.publish( &dst );
+  pub_dst.publish( &dst );
 }
 

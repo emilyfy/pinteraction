@@ -8,17 +8,18 @@
 
 # signal processing
 import numpy as np
-from scipy.fftpack import fft, ifft
+from scipy.fftpack import fft, ifft, rfft, irfft, fftfreq
 
 # audio playing
 from scipy.io import wavfile
 from os import path
 import sounddevice
-from obspy.signal.filter import bandstop, bandpass
+from obspy.signal.filter import bandstop
 
 # ros
 import rospy
-from std_msgs.msg import UInt8, UInt16, UInt16MultiArray
+from std_msgs.msg import UInt16, UInt16MultiArray
+from pinteraction.msg import BoolMultiArray
 
 # calculations
 from math import ceil, log10
@@ -61,8 +62,8 @@ class Sound(object):
             yd = []
             for j in range(10):
                 ys = []
-                for k in range(int(((2.0**(j+1))-(2.0**(j)))*(self.n/1980))):
-                    ys.append(yf[int((2.0**(j))*(self.n/1980))+k])
+                for k in range(int((2.0**(j+1))-(2.0**(j)))):
+                    ys.append(yf[int(2.0**(j))-1+k])
                 ysm = np.mean(ys)*100
                 if not ysm > 0:
                     yd.append(0)
@@ -80,22 +81,23 @@ class Sound(object):
         sounddevice.play(self.y, self.fs)
         self.starttime = time()
         self.currblock = 0
-        # self.fftblock = 0
+        self.editedblock = 0
+        self.fftblock = 0
 
-        rospy.Subscriber('/feedback', UInt8, self.callback, queue_size=10)
+        rospy.Subscriber('/feedback', BoolMultiArray, self.callback, queue_size=10)
 
         self.output = []
         for j in range(10):
             self.output.append(UInt16MultiArray())
-            self.output.layout.data_offset = 0
+            self.output[j].layout.data_offset = 0
 
     def fft(self, i):
         self.currblock = i/self.n
         
-        # # fft to block by block instead of per sample if can't afford computational time
+        # # fft to block by block instead of per sample if can't afford computational/communication time
         # # doesn't remove audio glitches though
-        # if self.currblock == self.fftblock:
-        #     return
+        if self.currblock == self.fftblock:
+            return
 
         # fft
         yt = self.y[i:i+self.n]
@@ -106,8 +108,8 @@ class Sound(object):
         yd = []
         for j in range(10):
             ys = []
-            for k in range(int(((2.0**(j+1))-(2.0**(j)))*(self.n/1980))):
-                ys.append(ya[int((2.0**(j))*(self.n/1980))+k])
+            for k in range(int((2.0**(j+1))-(2.0**(j)))):
+                ys.append(ya[int(2.0**(j))-1+k])
             ysm = np.mean(ys)*100
             if not ysm > 0:
                 yd.append(0)
@@ -127,7 +129,7 @@ class Sound(object):
         for j in range(10):
             self.pub[j].publish(self.output[j])
 
-        # self.fftblock = self.currblock
+        self.fftblock = self.currblock
 
     def stop(self):
         for j in range(9,0,-1):
@@ -136,18 +138,32 @@ class Sound(object):
         self.pub[j].publish(self.output[j])
     
     def callback(self, fdb):
-        filter = [fdb.data[j] for j in range(10)]
-        block = self.y[(self.currblock+1)*self.n:(self.currblock+2)*self.n]
+        if self.editedblock > self.currblock+30:
+            return
+        block = self.y[(self.editedblock+1)*self.n:(self.editedblock+40)*self.n]
+        # for j in range(10):
+        #     if not fdb.data[j]:
+        #         block = bandstop(block, self.xf[int(2.0**(j))-1], self.xf[int(2.0**(j+1))-1], self.fs, corners=3)
+        #         block = [int(block[j]) for j in range(len(block))]
+        bf = fft(block)
+        filteredbf = np.asarray(rfft(block))
+        w = np.asarray(fftfreq(len(block), d=self.T))
         for j in range(10):
-            if filter[j]==0:
-                block = bandstop(block, self.xf[int((2.0**(j))*(self.n/1980))],self.xf[int((2.0**(j+1))*(self.n/1980))], self.fs)
-        self.y[(self.currblock+1)*self.n:(self.currblock+2)*self.n] = block
+            if not fdb.data[j]:
+                filteredbf[np.argwhere((w>=self.xf[int(2.0**(j))-1]) & (w<self.xf[int(2.0**(j+1))-1]))] = 0
+        filteredblock = irfft(filteredbf)
+        filteredblock = [int(filteredblock[j]) for j in range(len(filteredblock))]
+
+        self.y[(self.editedblock+1)*self.n:(self.editedblock+40)*self.n] = filteredblock
+        # print self.currblock, "curr", self.y[(self.currblock+1)*self.n:(self.currblock+1)*self.n+50]
+        # print self.editedblock+1, "edited", self.y[(self.editedblock+1)*self.n:(self.editedblock+1)*self.n+100]
+        self.editedblock = self.currblock+39
 
 def main():
     rospy.init_node('fourier')
     rospy.set_param('mode', 2)
     try:
-        soundfilename = rospy.get_param('/feedback/soundfile')
+        soundfilename = rospy.get_param('/fourier/soundfile')
     except (IOError, KeyError) as e:
         soundfilename = 'Spirited Away Always With Me - Piano.wav'
     Baa = Sound(filename=soundfilename, filepath='../../../../Pinteraction_audio_files')
@@ -156,8 +172,7 @@ def main():
     currtime = time()
     while (currtime < Baa.starttime + Baa.duration) and (not rospy.is_shutdown()):
         i = int((currtime - Baa.starttime)/Baa.T)
-        rospy.loginfo("sample %d", i)
-        rospy.loginfo(currtime)
+        print Baa.y[i]
         Baa.fft(i)
         currtime = time()
 

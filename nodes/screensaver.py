@@ -5,11 +5,11 @@
 import rospy
 from std_msgs.msg import UInt16MultiArray
 from math import *
-from time import time
+from time import time, sleep
 
 pub = [rospy.Publisher] * 10
 for i in range(10):
-    pub[i] = rospy.Publisher('/height/'+str(i+1), UInt16MultiArray, queue_size=10)
+    pub[i] = rospy.Publisher('/height/'+str(i+1), UInt16MultiArray, queue_size=1)
 rospy.init_node('wave')
 
 output = []
@@ -32,9 +32,10 @@ def main():
         
         for j in range(10):
             for k in range(10):
-                y = 5*sin(pi/5*(i+2*j+k))+5
+                y = 5*sin(pi/5*(10*i+2*j+k))+5
                 output[j].data[k] = int(y/10.0*1023)
             pub[j].publish(output[j])
+        sleep(0.05)
 
 if __name__ == '__main__':
     try:
