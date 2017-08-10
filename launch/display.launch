@@ -1,7 +1,7 @@
 <launch>
 
     <node
-        name="screensaver" pkg="pinteraction" type="screensaver.py" respawn="true">
+        name="display" pkg="pinteraction" type="display.py" respawn="true">
     </node>
 
 	<!--ARDUINO  -->

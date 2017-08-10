@@ -1,3 +1,9 @@
+/*  pinteraction
+ *  sketch for arduino mega controlling 10 motorized linear potentiometers
+ *  moves all 10 pins up and down at the same time
+ *  no ros involved
+ */
+
 #define pins 10     // max of 12 pins can be set
 int i;
 

@@ -172,7 +172,7 @@ int main(int argc, char* argv[])
 			}
 			
 			output[row].data[col] = int(height/10.0*1023);
-			if (col>0) output[row+1].data[col-1] = int(height/10.0*1023);
+			if (col>0) output[row].data[col-1] = int(height/10.0*1023);
 			if (col<9) output[row].data[col+1] = int(height/10.0*1023);
             pub[row].publish(output[row]);
 		}

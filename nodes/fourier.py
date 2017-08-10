@@ -8,13 +8,12 @@
 
 # signal processing
 import numpy as np
-from scipy.fftpack import fft, ifft, rfft, irfft, fftfreq
+from scipy.fftpack import fft, ifft, rfft, irfft
 
 # audio playing
 from scipy.io import wavfile
 from os import path
 import sounddevice
-from obspy.signal.filter import bandstop
 
 # ros
 import rospy
@@ -23,163 +22,161 @@ from pinteraction.msg import BoolMultiArray
 
 # calculations
 from math import ceil, log10
-from time import time, sleep
+from time import time
 
-class Sound(object):
-    n = 2048             # no of samples in each block
+# global variables
+currblock = 0
+editedblock = 0
+y = []
+y1 = y
+n = 2048
+xf = []
+off = [False, False, False, False, False, False, False, False, False, False]
     
-    def __init__(self, filename, filepath):
-        self.soundfile = path.join(path.dirname(__file__), filepath, filename)
-        self.fs, self.y = wavfile.read(self.soundfile)
-        
-        # average two channels if stereo
-        if hasattr(self.y[0], "__len__"):
-            # self.y = [int(np.mean(self.y[i])) for i in range(len(self.y))]
-            self.y = [self.y[i][0] for i in range(len(self.y))]
-        
-        self.N = len(self.y)                                     # no of samples
-        self.T = 1.0 / self.fs                                   # time btw samples
-        self.x = np.linspace(0.0, self.N*self.T, self.N)         # create x axis of sound file
-        self.duration = self.N/self.fs                           # duration of song
-        self.xf = np.linspace(0.0, 1.0/(2.0*self.T), self.n/2)   # x axis for fft
+def callback(fdb):
+    global currblock, editedblock, y, y1, n, xf, off
 
-        # make sure data types are of float64, float32, int32, int16, int8 or uint8
-        dt = np.dtype(self.y[0])
-        acctype = [np.dtype('float64'), np.dtype('float32'), np.dtype('int32'), np.dtype('int16'), np.dtype('int8'), np.dtype('uint8')]
-        if dt not in acctype:
-            self.y = np.asarray(self.y, dtype=np.int16)
-        
-        # to determine ym of each band, run ft on whole music first
-        self.ym = [0.0] * 10
-        arr = np.linspace(0,self.N,self.N/self.n)
-        arr = [int(i) for i in arr]
-        arr.pop()
-        for i in arr:
-            yt = self.y[i:i+self.n]
-            yf = fft(yt)
-            yf = 2.0/self.n * np.abs(yf[0:self.n/2])
+    if editedblock > currblock+10:
+        return
 
-            yd = []
-            for j in range(10):
-                ys = []
-                for k in range(int((2.0**(j+1))-(2.0**(j)))):
-                    ys.append(yf[int(2.0**(j))-1+k])
-                ysm = np.mean(ys)*100
-                if not ysm > 0:
-                    yd.append(0)
-                else:
-                    yd.append(20*log10(ysm))
-                if yd[j] > self.ym[j]:
-                    self.ym[j] = yd[j]
+    for j in range(20):
+        block = y[(editedblock+1+j)*n:(editedblock+2+j)*n]
+        filteredbf = np.asarray(rfft(block))
+        for k in range(10):
+            if not fdb.data[k]:
+                filteredbf[np.argwhere((xf>=xf[int(2.0**(k))-1]) & (xf<xf[int(2.0**(k+1))-1]))] = 0
+                off[k] = True
+            else:
+                off[k] = False
+        filteredblock = irfft(filteredbf)
+        filteredblock = [int(filteredblock[k]) for k in range(len(filteredblock))]
 
-        # ros node setup
-        self.pub = [rospy.Publisher] * 10
-        for i in range(10):
-            self.pub[i] = rospy.Publisher('/height/'+str(i+1), UInt16MultiArray, queue_size=10)
+        try:
+            l = 0
+            for k in range((editedblock+1+j)*n,(editedblock+2+j)*n):
+                y1[k] = [filteredblock[l], filteredblock[l]]
+                # y[k] = filteredblock[l]
+                l +=1
+        except NameError:
+            y[(editedblock+1+j)*n:(editedblock+2+j)*n] = filteredblock
+    
+    editedblock = editedblock+20
 
-    def start(self):
-        sounddevice.play(self.y, self.fs)
-        self.starttime = time()
-        self.currblock = 0
-        self.editedblock = 0
-        self.fftblock = 0
+def main():
+    global currblock, editedblock, y, y1, n, xf, off
 
-        rospy.Subscriber('/feedback', BoolMultiArray, self.callback, queue_size=10)
+    rospy.init_node('fourier')
+    
+    try:
+        soundfilename = rospy.get_param('/fourier/soundfile')
+    except (IOError, KeyError) as e:
+        soundfilename = 'Spirited Away Always With Me - Piano.wav'
+    soundfile = path.join(path.dirname(__file__), '../../../../Pinteraction_audio_files', soundfilename)
+    fs,y = wavfile.read(soundfile)
 
-        self.output = []
-        for j in range(10):
-            self.output.append(UInt16MultiArray())
-            self.output[j].layout.data_offset = 0
+    # average two channels if stereo
+    if hasattr(y[0], "__len__"):
+        # y = [int(np.mean(y[i])) for i in range(len(y))]
+        y1 = y
+        y = [y[i][0] for i in range(len(y))]
+    
+    N = len(y)                                     # no of samples
+    T = 1.0 / fs                                   # time btw samples
+    x = np.linspace(0.0, N*T, N)                   # create x axis of sound file
+    duration = N/fs                                # duration of song
+    xf = np.linspace(0.0, 1.0/(2.0*T), n/2)        # x axis for fft
+    n = 2048                                       # no of samples in each block
 
-    def fft(self, i):
-        self.currblock = i/self.n
-        
-        # # fft to block by block instead of per sample if can't afford computational/communication time
-        # # doesn't remove audio glitches though
-        if self.currblock == self.fftblock:
-            return
-
-        # fft
-        yt = self.y[i:i+self.n]
+    # make sure data types are of float64, float32, int32, int16, int8 or uint8
+    dt = np.dtype(y[0])
+    acctype = [np.dtype('float64'), np.dtype('float32'), np.dtype('int32'), np.dtype('int16'), np.dtype('int8'), np.dtype('uint8')]
+    if dt not in acctype:
+        y = np.asarray(y, dtype=np.int16)
+    
+    # to determine ym of each band, run ft on whole music first
+    ym = [0.0] * 10
+    arr = np.linspace(0,N,N/n)
+    arr = [int(i) for i in arr]
+    arr.pop()
+    for i in arr:
+        yt = y[i:i+n]
         yf = fft(yt)
-        ya = 2.0/self.n * np.abs(yf[0:self.n/2])
+        yf = 2.0/n * np.abs(yf[0:n/2])
 
-        # separate into 10 bands
         yd = []
         for j in range(10):
             ys = []
             for k in range(int((2.0**(j+1))-(2.0**(j)))):
-                ys.append(ya[int(2.0**(j))-1+k])
+                ys.append(yf[int(2.0**(j))-1+k])
             ysm = np.mean(ys)*100
             if not ysm > 0:
                 yd.append(0)
             else:
                 yd.append(20*log10(ysm))
-		
-		# shift history and insert
-        height = [int(yd[j]/self.ym[j]*1023.0) for j in range(10)]
-        for j in range(10):
-            if height[j]<0:
-                height[j] = 0
-        for j in range(9,0,-1):
-			self.output[j].data = self.output[j-1].data
-        self.output[0].data = height
+            if yd[j] > ym[j]:
+                ym[j] = yd[j]
 
-		# publish
-        for j in range(10):
-            self.pub[j].publish(self.output[j])
-
-        self.fftblock = self.currblock
-
-    def stop(self):
-        for j in range(9,0,-1):
-			self.output[j].data = self.output[j-1].data
-        self.output[0].data = [0 for j in range(10)]
-        self.pub[j].publish(self.output[j])
+    # ros node setup
+    pub = [rospy.Publisher] * 10
+    for i in range(10):
+        pub[i] = rospy.Publisher('/height/'+str(i+1), UInt16MultiArray, queue_size=10)
     
-    def callback(self, fdb):
-        if self.editedblock > self.currblock+30:
-            return
-        block = self.y[(self.editedblock+1)*self.n:(self.editedblock+40)*self.n]
-        # for j in range(10):
-        #     if not fdb.data[j]:
-        #         block = bandstop(block, self.xf[int(2.0**(j))-1], self.xf[int(2.0**(j+1))-1], self.fs, corners=3)
-        #         block = [int(block[j]) for j in range(len(block))]
-        bf = fft(block)
-        filteredbf = np.asarray(rfft(block))
-        w = np.asarray(fftfreq(len(block), d=self.T))
-        for j in range(10):
-            if not fdb.data[j]:
-                filteredbf[np.argwhere((w>=self.xf[int(2.0**(j))-1]) & (w<self.xf[int(2.0**(j+1))-1]))] = 0
-        filteredblock = irfft(filteredbf)
-        filteredblock = [int(filteredblock[j]) for j in range(len(filteredblock))]
-
-        self.y[(self.editedblock+1)*self.n:(self.editedblock+40)*self.n] = filteredblock
-        # print self.currblock, "curr", self.y[(self.currblock+1)*self.n:(self.currblock+1)*self.n+50]
-        # print self.editedblock+1, "edited", self.y[(self.editedblock+1)*self.n:(self.editedblock+1)*self.n+100]
-        self.editedblock = self.currblock+39
-
-def main():
-    rospy.init_node('fourier')
+    # start playing song
+    sounddevice.play(y1, fs)
+    starttime = time()
+    currblock = 0
+    editedblock = 0
+    fftblock = 0
     rospy.set_param('mode', 2)
-    try:
-        soundfilename = rospy.get_param('/fourier/soundfile')
-    except (IOError, KeyError) as e:
-        soundfilename = 'Spirited Away Always With Me - Piano.wav'
-    Baa = Sound(filename=soundfilename, filepath='../../../../Pinteraction_audio_files')
-    Baa.start()
+
+    rospy.Subscriber('/feedback', BoolMultiArray, callback, queue_size=10)
+
+    output = []
+    for j in range(10):
+        output.append(UInt16MultiArray())
+        output[j].layout.data_offset = 0
 
     currtime = time()
-    while (currtime < Baa.starttime + Baa.duration) and (not rospy.is_shutdown()):
-        i = int((currtime - Baa.starttime)/Baa.T)
-        print Baa.y[i]
-        Baa.fft(i)
+    while (currtime < starttime + duration) and (not rospy.is_shutdown()):
+        i = int((currtime - starttime)/T)
+        # print y1[i]
+        currblock = i/n
+        
+        # fft
+        if currblock > fftblock:
+            yt = y[i:i+n]
+            yf = fft(yt)
+            ya = 2.0/n * np.abs(yf[0:n/2])
+
+            # separate into 10 bands
+            yd = []
+            for j in range(10):
+                ys = []
+                for k in range(int((2.0**(j+1))-(2.0**(j)))):
+                    ys.append(ya[int(2.0**(j))-1+k])
+                ysm = np.mean(ys)*100
+                if not ysm > 0:
+                    yd.append(0)
+                else:
+                    yd.append(20*log10(ysm))
+            
+            # shift history and insert
+            height = [int(yd[j]/ym[j]*1023.0) for j in range(10)]
+            for j in range(10):
+                height[j] = 0 if off[j] or height[j]<0 else height[j]
+            for j in range(9,0,-1):
+                output[j].data = output[j-1].data
+            output[0].data = height
+
+            # publish
+            for j in range(10):
+                pub[j].publish(output[j])
+
+            fftblock = currblock
+
         currtime = time()
 
     if not rospy.is_shutdown():
-        for j in range(10):
-            Baa.stop()
-            sleep(0.4)
         rospy.loginfo("finished playing song")
 
 if __name__ == '__main__':

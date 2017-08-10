@@ -32,7 +32,8 @@ def main():
         
         for j in range(10):
             for k in range(10):
-                y = 5*sin(pi/5*(10*i+2*j+k))+5
+                # y = 5*sin(pi/5*(10*i+2*j+k))+5                         # sine waves
+                y = 5*sin(pi/5*(10*i-abs(5-j)-abs(5-k)))+5             # ripples
                 output[j].data[k] = int(y/10.0*1023)
             pub[j].publish(output[j])
         sleep(0.05)

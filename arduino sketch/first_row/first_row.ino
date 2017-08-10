@@ -1,3 +1,17 @@
+/*  THIS SKETCH ISN'T WORKING, USE THE SKETCHES FOR THE SEPARATED ARDUINOS (control and upload) FOR FIRST ROW
+ *  pinteraction
+ *  sketch for first row arduino mega controlling 10 motorized linear potentiometers
+ *  
+ *  moves the 10 pins according to the target height set by the high level programming
+ *  through rosserial subscribe to topic /height/<rownumber> for the target heights of the 10 pins in the row
+ *  
+ *  checks for tactile feedback on pins for equalizer mode (mode 2)
+ *  publish on topic /feedback on whether it is being turned off
+ *  
+ *  read the proximity sensor on the glove for visual mode (mode 3)
+ *  publish on topic /distance the distance from the glove to pins
+ */
+
 #include <ros.h>
 #include <std_msgs/UInt8MultiArray.h>
 #include <std_msgs/UInt16.h>

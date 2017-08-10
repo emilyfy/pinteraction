@@ -40,7 +40,7 @@ def callback(msg):
     if input_row in row:
         indices = [i for i, x in enumerate(row) if x == input_row]
         for index in indices:
-            if col[index] == i_col:
+            if col[index] == input_col:
                 del starttime[index]
                 del duration[index]
                 del row[index]

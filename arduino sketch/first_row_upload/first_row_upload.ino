@@ -1,3 +1,13 @@
+/*  pinteraction
+ *  sketch for first row arduino mega, in serial communication with the other arduino mega controlling 10 motorized linear potentiometers
+ *  
+ *  receives info about feedback for equalizer mode (mode 2)
+ *  through rosserial publish on topic /feedback on whether it is being turned off
+ *  
+ *  read the proximity sensor on the glove for visual mode (mode 3)
+ *  through rosserial publish on topic /distance the distance from the glove to pins
+ */
+
 #include <ros.h>
 #include <std_msgs/UInt16.h>
 #include <pinteraction/BoolMultiArray.h>
