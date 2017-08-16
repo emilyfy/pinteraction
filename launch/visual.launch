@@ -25,7 +25,7 @@
       </node>
     </group>
 
-    <arg name="video_device" default="/dev/video1" />
+    <arg name="video_device" default="/dev/video0" />
     <arg name="camera_frame_id" default="camera_link" />
     <!--arg name="namespace" default="front_cam" /-->
     <arg name="camera_info" default="camera_info" />
@@ -66,7 +66,7 @@
     </node>
 
     <!--ARDUINO  -->
-     <node
+    <node
         name="serial_node_1" pkg="rosserial_python" type="serial_node.py" args="/dev/Arduino1" respawn="true">
     </node>
 
@@ -108,6 +108,6 @@
 
     <node
         name="serial_node_r" pkg="rosserial_python" type="serial_node.py" args="/dev/ArduinoR" respawn="true">
-    </node> 
+    </node>
 
 </launch>

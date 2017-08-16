@@ -9,7 +9,7 @@
 #include <sensor_msgs/image_encodings.h>
 #include <cv_bridge/cv_bridge.h>
 #include <dynamic_reconfigure/server.h>
-#include <geometry_msgs/Vector3.h>
+#include <std_msgs/UInt16MultiArray.h>
 #include <pinteraction/board_colorConfig.h>
 //OpenCV libs
 #include <opencv2/opencv.hpp>
@@ -35,7 +35,7 @@ bool debug;
 //Image transport vars
 cv_bridge::CvImagePtr cv_ptr;
 //ROS var
-std::vector<geometry_msgs::Vector3> object;
+std::vector<std_msgs::UInt16MultiArray> object;
 //OpenCV image processing method dependent vars 
 std::vector<std::vector<cv::Point> > contours;
 std::vector<cv::Vec4i> hierarchy;
@@ -123,10 +123,11 @@ void detect_board()
         setLabel(src, s, contours[i]);
       }
       cv::drawContours(src, contours, i, cv::Scalar(0,255,255), 2);
-      geometry_msgs::Vector3 new_object;
-      new_object.x = object_center.x;
-      new_object.y = object_center.y;
-      new_object.z = 0;
+      std_msgs::UInt16MultiArray new_object;
+      new_object.data.push_back(rect.tl().x);
+      new_object.data.push_back(rect.tl().y);
+      new_object.data.push_back(rect.br().x);
+      new_object.data.push_back(rect.br().y);
       object.push_back(new_object);
     }
   }
@@ -216,12 +217,12 @@ int main(int argc, char** argv)
   image_transport::ImageTransport it(nh);
   image_transport::Subscriber sub = it.subscribe(subscribed_image_topic, 1, imageCb);
   //...and ROS publisher
-  ros::Publisher pub = nh.advertise<geometry_msgs::Vector3>(published_topic, 1000);
+  ros::Publisher pub = nh.advertise<std_msgs::UInt16MultiArray>(published_topic, 1000);
   ros::Rate r(30);
   while (nh.ok())
   {
     //Publish every object detected
-    for(vector<geometry_msgs::Vector3>::iterator it = object.begin(); it != object.end(); it++)
+    for(vector<std_msgs::UInt16MultiArray>::iterator it = object.begin(); it != object.end(); it++)
       pub.publish(*it);
     //Reinitialize the object counting vars
     object.clear();

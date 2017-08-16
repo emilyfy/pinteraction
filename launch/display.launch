@@ -1,7 +1,10 @@
 <launch>
 
+    <arg name="type" default="wave" />
+
     <node
         name="display" pkg="pinteraction" type="display.py" respawn="true">
+        <param name="type" value="$(arg type)" />
     </node>
 
 	<!--ARDUINO  -->

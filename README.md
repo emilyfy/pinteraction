@@ -10,11 +10,14 @@
 <br>3) Visual hand interaction
 <br>
 <br>
+
 ## 1) Display
 ```bash
-  roslaunch pinteraction display.launch
+  roslaunch pinteraction display.launch type="wave"
+  roslaunch pinteraction display.launch type="ripple"
 ```
-<br>runs the node display.py which actuates the pins to generate waves based on pre-programmed formulaes
+<br>runs the node display.py which actuates the pins to generate waves or ripples based on pre-programmed formulaes
+<br>choose the display type by passing in argument for type as "wave" or "ripple". By default wave is displayed
 <br>
 ## 2) Audio
 ```bash
@@ -31,19 +34,21 @@
 ## 3) Visual
 ```bash
   roslaunch pinteraction visual.launch
-  roslaunch pinteraction visual.launch video_device:="/dev/video0"
+  roslaunch pinteraction visual.launch video_device:="/dev/video1"
 ```
 <br>runs the nodes vision_target.cpp and vision_actuate.cpp which actuates the pins below the user's hand to 5cm below the hand
 <br>vision_target uses OpenCV to get the position of the hand, which must be wearing a red glove
-<br>vision_actuate actuates the pin directly below the center of the hand and the pins surrounding it
+<br>vision_actuate actuates the pins directly below the hand
 <br>subscribes to /distance published by the first_row_upload Mega, which gives the distance between the hand and the pins directly below
 <br>outputs the pin heights, setting them such that they are always 5cm below the hand
-<br>change the camera device to the one to the USB camera by setting the argument video_device in calling roslaunch. Default is /dev/video1
+<br>change the camera device to the one to the USB camera by setting the argument video_device in calling roslaunch. Default is /dev/video0
 <br>
+<br>
+
 ## Required Packages
-<br>Python: scipy, numpy, matplotlib
+Python: scipy, numpy, matplotlib
 <br>OpenCV
-<br>ROS: usb_cam (https://github.com/bosch-ros-pkg/usb_cam.git)
+<br>ROS: rosserial, usb_cam (https://github.com/bosch-ros-pkg/usb_cam.git)
 <br>
 ### Setting udev rules
-<br>set the udev rules in /etc/udev/rules.d to that in archived codes/99-usb-serial.rules
+set the udev rules in /etc/udev/rules.d to that in archived codes/99-usb-serial.rules

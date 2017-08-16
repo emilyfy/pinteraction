@@ -26,14 +26,21 @@ def main():
     rospy.set_param('mode', 1)
     starttime = time()
 
+    try:
+        disptype = rospy.get_param('/display/type')
+    except (IOError, KeyError) as e:
+        disptype = "wave"
+
     while not rospy.is_shutdown():
         currtime = time()
         i = (currtime-starttime)%10
         
         for j in range(10):
             for k in range(10):
-                # y = 5*sin(pi/5*(10*i+2*j+k))+5                         # sine waves
-                y = 5*sin(pi/5*(10*i-abs(5-j)-abs(5-k)))+5             # ripples
+                if disptype=="wave":
+                    y = 5*sin(pi/5*(10*i+2*j+k))+5
+                elif disptype=="ripple":
+                    y = 5*sin(pi/5*(10*i-abs(5-j)-abs(5-k)))+5
                 output[j].data[k] = int(y/10.0*1023)
             pub[j].publish(output[j])
         sleep(0.05)
