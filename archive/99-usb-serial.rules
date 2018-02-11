@@ -1,0 +1,21 @@
+ACTION=="add", SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0042", ATTRS{serial}=="9563533353035141B1D0", SYMLINK+="Arduino1", MODE="0666"
+
+ACTION=="add", SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0042", ATTRS{serial}=="95635333530351B09062", SYMLINK+="Arduino2", MODE="0666"
+
+ACTION=="add", SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0042", ATTRS{serial}=="95635333530351B071E2", SYMLINK+="Arduino3", MODE="0666"
+
+ACTION=="add", SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0042", ATTRS{serial}=="956353335303514151B0", SYMLINK+="Arduino4", MODE="0666"
+
+ACTION=="add", SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0042", ATTRS{serial}=="956343136323510102C1", SYMLINK+="Arduino5", MODE="0666"
+
+ACTION=="add", SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0042", ATTRS{serial}=="95634313632351018012", SYMLINK+="Arduino6", MODE="0666"
+
+ACTION=="add", SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0042", ATTRS{serial}=="9563430343235191A0A2", SYMLINK+="Arduino7", MODE="0666"
+
+ACTION=="add", SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0042", ATTRS{serial}=="95635333530351D07001", SYMLINK+="Arduino8", MODE="0666"
+
+ACTION=="add", SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0042", ATTRS{serial}=="9563533353035131A2E0", SYMLINK+="Arduino9", MODE="0666"
+
+ACTION=="add", SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0042", ATTRS{serial}=="95632313234351205260", SYMLINK+="Arduino10", MODE="0666"
+
+ACTION=="add", SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", ATTRS{idProduct}=="0042", ATTRS{serial}=="75533343236351B04272", SYMLINK+="ArduinoR", MODE="0666"

@@ -1,0 +1,5 @@
+audio_files/*
+!audio_files/Spirited\ Away\ Always\ With\ Me\ -\ Piano.wav
+.vscode
+*~
+*.pyc

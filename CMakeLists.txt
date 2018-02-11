@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   sensor_msgs
+  geometry_msgs
   cv_bridge
   dynamic_reconfigure
   image_transport
@@ -114,7 +115,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES pinteraction
-  CATKIN_DEPENDS roscpp rospy std_msgs message_runtime
+  CATKIN_DEPENDS roscpp rospy std_msgs geometry_msgs message_runtime
 #  DEPENDS system_lib
 )
 
@@ -132,7 +133,7 @@ include_directories(
 
 ## Declare a C++ library
  add_library(${PROJECT_NAME}
-   src/Source.cpp
+   src/cblobtracking.cpp
  )
 
 ## Add cmake target dependencies of the library
@@ -144,8 +145,9 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/pinteraction_node.cpp)
-add_executable(vision nodes/vision.cpp)
-add_executable(vision_target nodes/vision_target.cpp)
+add_executable(vision src/vision.cpp)
+add_executable(vision_target src/vision_target.cpp)
+add_executable(vision_target_9 src/vision_target_9.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -158,6 +160,7 @@ add_executable(vision_target nodes/vision_target.cpp)
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(vision ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} )
 add_dependencies(vision_target ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} )
+add_dependencies(vision_target_9 ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} )
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(${PROJECT_NAME}_node
@@ -165,6 +168,7 @@ add_dependencies(vision_target ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPO
 # )
 target_link_libraries(vision ${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 target_link_libraries(vision_target ${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+target_link_libraries(vision_target_9 ${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
 #############
 ## Install ##
